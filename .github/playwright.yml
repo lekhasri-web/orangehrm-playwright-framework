@@ -1,0 +1,45 @@
+name: Playwright Regression Suite
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    - cron: '0 0 * * *' # Optional: Automatically runs every night at midnight
+
+jobs:
+  test:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code Repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python Environment
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip' # Speeds up future pipeline runs by caching packages
+
+    - name: Install Project Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Install Playwright Browsers
+      run: playwright install chromium --with-deps
+
+    - name: Execute Framework Tests
+      run: pytest
+
+    - name: Upload Test Report & Diagnostics on Failure
+      if: always() # Ensures logs are saved even if tests crash
+      uses: actions/upload-artifact@v4
+      with:
+        name: playwright-test-execution-report
+        path: |
+          report.html
+          test-results/
+        retention-days: 7
